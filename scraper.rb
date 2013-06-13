@@ -7,7 +7,7 @@ response = File.open("kristencurtis.html")
 doc = Nokogiri::HTML(response)
 
 
-#################### our student info ##########################################
+#################### STUDENT SCRAPE ##########################################
 
 student = {}
 
@@ -27,7 +27,7 @@ student[:codeschool_url] = coder_cred_links[2]
 student[:coderwall_url]  = coder_cred_links[3]
 
 
-################### our content info ###########################################
+################### CONTENT SCRAPE ###########################################
 
 content = []
 boxes = doc.search("div.services")
@@ -40,50 +40,51 @@ boxes.each_with_index do |box, index|
   content << content_box
 end
 
-# puts student.inspect
-# puts content.inspect
+
+####################### STUDENT TABLE #######################################
 
 remaining_columns = student.keys.collect do |key|
   "#{key} TEXT"
 end
 
-create_student_table_statement = "CREATE TABLE student (
+create_student_table_statement = "
+    CREATE TABLE student (
     id INTEGER PRIMARY KEY AUTOINCREMENT, #{remaining_columns.join(',')}
   );"
-
-# puts create_student_table_statement
 
 db = SQLite3::Database.new( "students.db" )
 db.execute(create_student_table_statement)
 
-keys_for_content_table = "student_id int,
-  section_id int,
-  title TEXT,
-  body_text TEXT"
-
-
-create_content_table_statement = "CREATE TABLE content (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #{keys_for_content_table}
-  );"
-db.execute(create_content_table_statement)
-
 student_column_values = student.collect do |key, values|
   "'#{values}'"
 end
+
 insert_student_table_statement = "
   INSERT INTO student(#{student.keys.join(',')} ) 
   VALUES (#{student_column_values.join(',')}
     );"
-# puts insert_student_table_statement
+
 db.execute(insert_student_table_statement)
 
+######################## CONTENT TABLE #####################################
+
+keys_for_content_table = "
+  student_id int,
+  section_id int,
+  title TEXT,
+  body_text TEXT
+"
+
+create_content_table_statement = "
+  CREATE TABLE content (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #{keys_for_content_table}
+  );"
+
+db.execute(create_content_table_statement)
 
 content_column_values = content.collect do |content_row|
   "(1, #{content_row[:section_id]}, \"#{content_row[:title]}\", \"#{content_row[:body_text]}\")"
-  # hash.collect do |key,values|
-  #   "'#{values}'"
-  # end
 end
 
 puts content_column_values
@@ -92,18 +93,7 @@ insert_content_table_statement = "
   INSERT INTO content (student_id, section_id, title, body_text) 
   VALUES
     #{content_column_values.join(',')}
-    ;"
-puts insert_content_table_statement
+  ;"
+
 db.execute(insert_content_table_statement)
 
-
-
-# sections = doc.search(".services-wrap").to_a
-# sections.delete_at(1) # get rid of coder cred
-# sections.each do |section|
-# end
-# social_links.each do |link|
-#   short_url = link.match(/https?:\/\/(www.)?([^\/]+)/)[2]
-# end
-# 
-# 
