@@ -32,15 +32,16 @@ student[:coderwall_url]  = coder_cred_links[3]
 content = []
 boxes = doc.search("div.services")
 
-boxes.each do |box|
+boxes.each_with_index do |box, index|
   content_box = {}
+  content_box[:section_id] = index + 1
   content_box[:title] = box.search("h3").text
-  content_box[:text] = box.search("p,li").text.strip.gsub(/ {1,}/,' ')
+  content_box[:body_text] = box.search("p,li").text.strip.gsub(/ {1,}/,' ')
   content << content_box
 end
 
-puts student.inspect
-puts content.inspect
+# puts student.inspect
+# puts content.inspect
 
 remaining_columns = student.keys.collect do |key|
   "#{key} TEXT"
@@ -55,17 +56,46 @@ create_student_table_statement = "CREATE TABLE student (
 db = SQLite3::Database.new( "students.db" )
 db.execute(create_student_table_statement)
 
-create_content_table_statement = "CREATE TABLE content (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  student_id int,
+keys_for_content_table = "student_id int,
   section_id int,
   title TEXT,
-  text TEXT
+  body_text TEXT"
+
+
+create_content_table_statement = "CREATE TABLE content (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #{keys_for_content_table}
   );"
-
-puts create_content_table_statement
-
 db.execute(create_content_table_statement)
+
+student_column_values = student.collect do |key, values|
+  "'#{values}'"
+end
+insert_student_table_statement = "
+  INSERT INTO student(#{student.keys.join(',')} ) 
+  VALUES (#{student_column_values.join(',')}
+    );"
+# puts insert_student_table_statement
+db.execute(insert_student_table_statement)
+
+
+content_column_values = content.collect do |content_row|
+  "(1, #{content_row[:section_id]}, \"#{content_row[:title]}\", \"#{content_row[:body_text]}\")"
+  # hash.collect do |key,values|
+  #   "'#{values}'"
+  # end
+end
+
+puts content_column_values
+
+insert_content_table_statement = "
+  INSERT INTO content (student_id, section_id, title, body_text) 
+  VALUES
+    #{content_column_values.join(',')}
+    ;"
+puts insert_content_table_statement
+db.execute(insert_content_table_statement)
+
 
 
 # sections = doc.search(".services-wrap").to_a
