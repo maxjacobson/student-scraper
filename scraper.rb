@@ -1,8 +1,9 @@
 require 'nokogiri'
 require 'open-uri'
 require 'sqlite3'
+require 'pry'
 
-# response = open("http://students.flatironschool.com/students/thomas.html")
+# response = open("http://students.flatironschool.com/students/sarahduve.html")
 response = File.open("kristencurtis.html")
 doc = Nokogiri::HTML(response)
 
@@ -56,44 +57,62 @@ db = SQLite3::Database.new( "students.db" )
 db.execute(create_student_table_statement)
 
 student_column_values = student.collect do |key, values|
-  "'#{values}'"
+  # "'#{values}'"
+  values
 end
 
-insert_student_table_statement = "
-  INSERT INTO student(#{student.keys.join(',')} ) 
-  VALUES (#{student_column_values.join(',')}
-    );"
+# binding.pry
 
-db.execute(insert_student_table_statement)
+# insert_student_table_statement = "
+#   INSERT INTO student(#{student.keys.join(',')} ) 
+#   VALUES (#{student_column_values.join(',')}
+#     );"
+
+# commenting for posterity
+# db.execute(insert_student_table_statement)
+
+# Execute inserts with parameter markers
+# db.execute("INSERT INTO students (name, email, grade, blog) 
+#             VALUES (?, ?, ?, ?)", [@name, @email, @grade, @blog])
+
+db.execute("INSERT INTO student(#{student.keys.join(',')})
+              VALUES (?,?,?,?,?,?,?,?,?,?)", student_column_values)
+
+# binding.pry
+
 
 ######################## CONTENT TABLE #####################################
-
-keys_for_content_table = "
-  student_id int,
-  section_id int,
-  title TEXT,
-  body_text TEXT
-"
 
 create_content_table_statement = "
   CREATE TABLE content (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #{keys_for_content_table}
+    student_id int,
+    section_id int,
+    title TEXT,
+    body_text TEXT
   );"
 
 db.execute(create_content_table_statement)
 
 content_column_values = content.collect do |content_row|
-  "(1, #{content_row[:section_id]}, \"#{content_row[:title]}\", \"#{content_row[:body_text]}\")"
+  # "(1, #{content_row[:section_id]}, \"#{content_row[:title]}\", \"#{content_row[:body_text]}\")"
+  [1, content_row[:section_id], content_row[:title], content_row[:body_text]]
 end
 
-puts content_column_values
 
-insert_content_table_statement = "
-  INSERT INTO content (student_id, section_id, title, body_text) 
-  VALUES
-    #{content_column_values.join(',')}
-  ;"
+# binding.pry
+# 
 
-db.execute(insert_content_table_statement)
+db.execute("INSERT INTO content(student_id, section_id, title, body_text)
+              VALUES #{("(?,?,?,?),"*9)[0..-2]}", content_column_values.flatten)
+
+binding.pry
+
+# insert_content_table_statement = "
+#   INSERT INTO content (student_id, section_id, title, body_text) 
+#   VALUES
+#     #{content_column_values.join(',')}
+#   ;"
+
+# db.execute(insert_content_table_statement)
 
