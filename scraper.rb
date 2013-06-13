@@ -2,6 +2,7 @@ require 'nokogiri'
 require 'open-uri'
 require 'sqlite3'
 require 'pry'
+require 'ruby-progressbar'
 
 def fetch_doc(url)
   response = open(url)
@@ -76,6 +77,7 @@ def insert_content(content, db)
 end
 
 def scrape_links(links,db)
+  prog = ProgressBar.create(:title => " Scraping", :total => links.length)
   links.each_with_index do |link, index|
     doc = fetch_doc(link) #=> returns nokogiri doc
     student = scrape_student_info(doc) #=> student hash
@@ -86,6 +88,7 @@ def scrape_links(links,db)
     end
     insert_student(student, db)
     insert_content(content, db)
+    prog.increment
   end
 end
 
