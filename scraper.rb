@@ -3,8 +3,27 @@ require 'open-uri'
 require 'sqlite3'
 require 'pry'
 
+
+db = SQLite3::Database.new( "students.db" )
+index_response = open("http://students.flatironschool.com/")
+index_doc = Nokogiri::HTML(index_response)
+links = index_doc.search(".blog-title a").collect{|link| "http://students.flatironschool.com/#{link.attr("href")}".downcase}.delete_if{|url| url == "http://students.flatironschool.com/#"}
+
+
+
+
+
+
+
+
+links.each do |link|
+
+end
+
+
+
 # response = open("http://students.flatironschool.com/students/sarahduve.html")
-response = File.open("kristencurtis.html")
+response = File.open("sarahduve.html")
 doc = Nokogiri::HTML(response)
 
 #################### STUDENT SCRAPE ##########################################
@@ -46,13 +65,11 @@ remaining_columns = student.keys.collect do |key|
   "#{key} TEXT"
 end
 
-create_student_table_statement = "
+
+db.execute("
     CREATE TABLE student (
     id INTEGER PRIMARY KEY AUTOINCREMENT, #{remaining_columns.join(',')}
-  );"
-
-db = SQLite3::Database.new( "students.db" )
-db.execute(create_student_table_statement)
+  );")
 
 student_column_values = student.collect { |key, values| values }
 
@@ -62,16 +79,14 @@ db.execute("INSERT INTO student(#{student.keys.join(',')})
 
 ######################## CONTENT TABLE #####################################
 
-create_content_table_statement = "
+db.execute("
   CREATE TABLE content (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id int,
     section_id int,
     title TEXT,
     body_text TEXT
-  );"
-
-db.execute(create_content_table_statement)
+  );")
 
 content_column_values = content.collect do |content_row|
   [1, content_row[:section_id], content_row[:title], content_row[:body_text]]
