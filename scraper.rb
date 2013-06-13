@@ -33,7 +33,7 @@ def scrape_content_info(doc, student_id)
   boxes = doc.search("div.services")
   boxes.each_with_index do |box, index|
     content_box = {}
-    content_box[:student_id] = student_id
+    content_box[:student_id] = student_id + 1
     content_box[:section_id] = index + 1
     content_box[:title] = box.search("h3").text
     content_box[:body_text] = box.text.strip.split("\n")[1..-1].join("\n").strip.gsub(/ {1,}/,' ')
@@ -98,5 +98,5 @@ links = index_doc.search(".blog-title a")
           .collect{|link| "http://students.flatironschool.com/#{link.attr("href")}".downcase}
           .delete_if{|url| url == "http://students.flatironschool.com/#"}
           .delete_if{|url| url =~ /waxman/} # bad link
+          .uniq # because matt shows up twice
 scrape_links(links,db)
-binding.pry
