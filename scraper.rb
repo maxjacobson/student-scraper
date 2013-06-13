@@ -7,7 +7,6 @@ require 'pry'
 response = File.open("kristencurtis.html")
 doc = Nokogiri::HTML(response)
 
-
 #################### STUDENT SCRAPE ##########################################
 
 student = {}
@@ -37,10 +36,9 @@ boxes.each_with_index do |box, index|
   content_box = {}
   content_box[:section_id] = index + 1
   content_box[:title] = box.search("h3").text
-  content_box[:body_text] = box.search("p,li").text.strip.gsub(/ {1,}/,' ')
+  content_box[:body_text] = box.text.strip.split("\n")[1..-1].join("\n").strip.gsub(/ {1,}/,' ')
   content << content_box
 end
-
 
 ####################### STUDENT TABLE #######################################
 
@@ -56,29 +54,10 @@ create_student_table_statement = "
 db = SQLite3::Database.new( "students.db" )
 db.execute(create_student_table_statement)
 
-student_column_values = student.collect do |key, values|
-  # "'#{values}'"
-  values
-end
-
-# binding.pry
-
-# insert_student_table_statement = "
-#   INSERT INTO student(#{student.keys.join(',')} ) 
-#   VALUES (#{student_column_values.join(',')}
-#     );"
-
-# commenting for posterity
-# db.execute(insert_student_table_statement)
-
-# Execute inserts with parameter markers
-# db.execute("INSERT INTO students (name, email, grade, blog) 
-#             VALUES (?, ?, ?, ?)", [@name, @email, @grade, @blog])
+student_column_values = student.collect { |key, values| values }
 
 db.execute("INSERT INTO student(#{student.keys.join(',')})
               VALUES (?,?,?,?,?,?,?,?,?,?)", student_column_values)
-
-# binding.pry
 
 
 ######################## CONTENT TABLE #####################################
@@ -95,24 +74,9 @@ create_content_table_statement = "
 db.execute(create_content_table_statement)
 
 content_column_values = content.collect do |content_row|
-  # "(1, #{content_row[:section_id]}, \"#{content_row[:title]}\", \"#{content_row[:body_text]}\")"
   [1, content_row[:section_id], content_row[:title], content_row[:body_text]]
 end
 
 
-# binding.pry
-# 
-
 db.execute("INSERT INTO content(student_id, section_id, title, body_text)
               VALUES #{("(?,?,?,?),"*9)[0..-2]}", content_column_values.flatten)
-
-binding.pry
-
-# insert_content_table_statement = "
-#   INSERT INTO content (student_id, section_id, title, body_text) 
-#   VALUES
-#     #{content_column_values.join(',')}
-#   ;"
-
-# db.execute(insert_content_table_statement)
-
